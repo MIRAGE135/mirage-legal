@@ -1,0 +1,98 @@
+:root {
+  color-scheme: dark;
+  --bg: #03050d;
+  --card: #0b1226;
+  --line: #223257;
+  --text: #f1f6ff;
+  --muted: #a7b6cf;
+  --cyan: #20c8ff;
+  --purple: #a65cff;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  color: var(--text);
+  line-height: 1.68;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(31, 89, 175, .32), transparent 35%),
+    radial-gradient(circle at 90% 10%, rgba(132, 66, 224, .22), transparent 28%),
+    var(--bg);
+}
+
+.wrap {
+  width: min(940px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 42px 0 64px;
+}
+
+header {
+  padding: 26px 0 28px;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  margin: 0 0 8px;
+  color: var(--cyan);
+  font-weight: 900;
+  letter-spacing: .22em;
+  font-size: 14px;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(32px, 5vw, 50px);
+  line-height: 1.08;
+}
+
+.tagline { margin: 12px 0 0; color: var(--muted); }
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 22px 0;
+}
+
+nav a {
+  color: var(--text);
+  text-decoration: none;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(11, 18, 38, .92);
+}
+
+nav a:hover, nav a[aria-current="page"] { border-color: var(--cyan); }
+
+main {
+  padding: clamp(24px, 5vw, 44px);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(18, 29, 58, .97), rgba(8, 14, 30, .99));
+  box-shadow: 0 28px 80px rgba(0, 0, 0, .34);
+}
+
+h2 { margin: 34px 0 8px; color: #fff; font-size: 22px; }
+h2:first-child { margin-top: 0; }
+p, li { color: #d7e0ef; }
+a { color: var(--cyan); }
+
+.notice {
+  padding: 15px 17px;
+  border-left: 3px solid var(--purple);
+  border-radius: 10px;
+  background: #111a35;
+}
+
+footer { margin-top: 26px; color: var(--muted); font-size: 14px; }
+
+@media (max-width: 640px) {
+  .wrap { width: min(100% - 20px, 940px); padding-top: 20px; }
+  main { border-radius: 16px; }
+}
