@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://static.xx.fbcdn.net; style-src 'unsafe-inline'; connect-src https://ibfujkrfpouxzmfxznva.supabase.co https://www.facebook.com https://graph.facebook.com; frame-src https://www.facebook.com https://web.facebook.com; img-src data: https://www.facebook.com https://static.xx.fbcdn.net; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+  <title>MIRAGE WhatsApp Baglantisi</title>
+  <style>
+    body{margin:0;min-height:100vh;display:grid;place-items:center;background:#061a2b;color:#10283b;font-family:system-ui,Segoe UI,sans-serif}
+    .card{width:min(520px,calc(100% - 32px));box-sizing:border-box;background:#fff;border-radius:22px;padding:34px;box-shadow:0 24px 70px #0007}
+    .brand{color:#2563eb;font-weight:800;letter-spacing:.14em;font-size:13px}
+    h1{margin:12px 0 8px;font-size:28px}
+    p{color:#587084;line-height:1.55}
+    button{width:100%;margin-top:18px;padding:14px;border:0;border-radius:12px;background:#081d31;color:#fff;font-weight:800;font-size:16px;cursor:pointer}
+    button:disabled{opacity:.55;cursor:wait}.ok{color:#087a4b}.err{color:#b42318}
+  </style>
+</head>
+<body>
+  <main class="card" data-mirage-bridge="MIRAGE_GITHUB_PAGES_BRIDGE_V1">
+    <div class="brand">MIRAGE &middot; WHATSAPP</div>
+    <h1>WhatsApp numaranizi baglayin</h1>
+    <p id="status">Guvenli baglanti oturumu denetleniyor...</p>
+    <button id="start" disabled>Meta ile devam et</button>
+  </main>
+  <script>
+    const APP_ID='1717246406153500';
+    const CONFIG_ID='1765699551126428';
+    const GRAPH_VERSION='v25.0';
+    const BRIDGE_URL='https://ibfujkrfpouxzmfxznva.supabase.co/functions/v1/whatsapp-signup-bridge';
+    const params=new URLSearchParams(location.search);
+    const STATE=String(params.get('state')||'');
+    const statusEl=document.getElementById('status');
+    const startButton=document.getElementById('start');
+    let code='',wabaId='',phoneNumberId='',signupEvent='',settled=false;
+    const setStatus=(text,kind='')=>{statusEl.textContent=text;statusEl.className=kind};
+    if(history.replaceState)history.replaceState(null,'',location.pathname);
+
+    async function send(payload){
+      const response=await fetch(BRIDGE_URL+'?state='+encodeURIComponent(STATE),{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+      });
+      const data=await response.json().catch(()=>null);
+      if(!response.ok||!data?.ok)throw new Error(data?.error||'Baglanti tamamlanamadi.');
+      return data;
+    }
+
+    async function finish(){
+      const complete=signupEvent==='FINISH_ONLY_WABA'||signupEvent==='FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING'||Boolean(phoneNumberId);
+      if(settled||!code||!wabaId||!complete)return;
+      settled=true;startButton.disabled=true;setStatus('Baglanti MIRAGE uygulamasina kaydediliyor...');
+      try{
+        await send({action:'complete',code,waba_id:wabaId,phone_number_id:phoneNumberId});
+        setStatus('Baglanti tamamlandi. MIRAGE uygulamasina donebilirsiniz.','ok');
+      }catch(error){
+        settled=false;startButton.disabled=false;
+        setStatus(error instanceof Error?error.message:'Baglanti tamamlanamadi.','err');
+      }
+    }
+
+    window.addEventListener('message',(event)=>{
+      let host='';
+      try{host=new URL(event.origin).hostname;if(host!=='facebook.com'&&!host.endsWith('.facebook.com'))return}catch{return}
+      let payload=event.data;
+      try{if(typeof payload==='string')payload=JSON.parse(payload)}catch{return}
+      if(payload?.type!=='WA_EMBEDDED_SIGNUP')return;
+      if(payload?.event==='CANCEL'){
+        void send({action:'cancel'}).catch(()=>{});
+        return setStatus('Islem iptal edildi. MIRAGE uygulamasina donup yeniden deneyebilirsiniz.','err');
+      }
+      if(payload?.event==='ERROR'){
+        void send({action:'cancel'}).catch(()=>{});
+        return setStatus('Meta baglanti islemi tamamlanamadi.','err');
+      }
+      if(['FINISH','FINISH_ONLY_WABA','FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING'].includes(payload?.event)){
+        signupEvent=String(payload.event);
+        wabaId=String(payload?.data?.waba_id||'');
+        phoneNumberId=String(payload?.data?.phone_number_id||'');
+        void finish();
+      }
+    });
+
+    window.fbAsyncInit=()=>{
+      FB.init({appId:APP_ID,cookie:true,xfbml:false,version:GRAPH_VERSION});
+      startButton.disabled=false;
+      setStatus('Hazir. Asagidaki dugmeyle Meta adimlarini tamamlayin.');
+    };
+
+    startButton.addEventListener('click',()=>{
+      startButton.disabled=true;setStatus('Meta aciliyor...');
+      FB.login((response)=>{
+        code=String(response?.authResponse?.code||'');
+        if(!code){startButton.disabled=false;return setStatus('Meta yetkilendirmesi tamamlanmadi.','err')}
+        void finish();
+      },{config_id:CONFIG_ID,response_type:'code',override_default_response_type:true,extras:{setup:{},featureType:'whatsapp_business_app_onboarding',sessionInfoVersion:'3'}});
+    });
+
+    if(!/^[A-Za-z0-9_-]{40,64}$/.test(STATE)){
+      setStatus('Guvenli baglanti oturumu gecersiz. MIRAGE uygulamasina donup yeniden baslatin.','err');
+    }else{
+      const script=document.createElement('script');
+      script.async=true;script.defer=true;script.crossOrigin='anonymous';
+      script.src='https://connect.facebook.net/tr_TR/sdk.js';
+      script.onerror=()=>setStatus('Meta baglanti araci yuklenemedi.','err');
+      document.head.appendChild(script);
+      setTimeout(()=>{if(!settled)setStatus('Oturum suresi doldu. MIRAGE uygulamasina donup yeniden baslatin.','err')},10*60*1000);
+    }
+  </script>
+</body>
+</html>
